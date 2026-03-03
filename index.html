@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<title>₿ 가계부</title>
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0d1117;color:#e6edf3;font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;overflow-x:hidden}
+input,button,select{font-family:inherit;outline:none}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+::-webkit-scrollbar{width:0;height:0}
+
+.hdr{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center}
+.htit{font-size:22px;font-weight:800}
+.hprice{font-size:11px;color:#f7931a;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.sdot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.sdot.live{background:#3fb950;animation:pu 2s infinite}
+.sdot.manual{background:#f7931a}
+.sdot.err{background:#f85149}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
+
+.mnav{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 16px 4px}
+.mnav button{background:none;border:none;color:#7d8590;font-size:22px;cursor:pointer;padding:4px 12px}
+.mbal{font-size:22px;font-weight:800;margin-top:2px}
+.msum{display:flex;justify-content:center;gap:14px;padding:8px 16px 12px;font-size:12px;flex-wrap:wrap}
+
+.tabs{display:flex;margin:0 16px 6px;background:#161b22;border-radius:10px;overflow:hidden;border:1px solid #21262d}
+.tabs button{flex:1;padding:8px 0;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:#7d8590;transition:all .15s}
+.tabs button.act{background:rgba(247,147,26,.15);color:#f7931a}
+
+.cwrap{padding:4px 8px;margin-bottom:4px}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.chdr{text-align:center;font-size:11px;font-weight:600;padding:6px 0;color:#7d8590}
+.chdr.sun{color:#f85149}.chdr.sat{color:#58a6ff}
+.ccell{text-align:center;padding:5px 1px;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:1.5px solid transparent;border-radius:10px;cursor:pointer;transition:all .15s}
+.ccell.empty{opacity:0;cursor:default}
+.ccell.sel{background:rgba(247,147,26,.12);border-color:#f7931a}
+.ccell.td{border-color:#30363d}
+.cday{font-size:13px;font-weight:500;color:#c9d1d9;margin-bottom:1px}
+.cday.sun{color:#f85149}.cday.sat{color:#58a6ff}
+.cday.today{background:#f7931a;color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.cinc{font-size:9px;color:#3fb950;font-weight:700;line-height:1.3}
+.cexp{font-size:9px;color:#f85149;font-weight:700;line-height:1.3}
+
+.dwrap{padding:10px 16px;border-top:1px solid #21262d;margin-top:4px}
+.ddate{font-size:15px;font-weight:700;color:#f0f6fc}
+.addbtn{background:rgba(247,147,26,.15);border:1px solid #f7931a;border-radius:8px;padding:5px 14px;color:#f7931a;font-size:12px;font-weight:600;cursor:pointer}
+
+.ecard{background:#0d1117;border:1px solid #21262d;border-radius:12px;padding:10px 12px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
+.ecat{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}
+.ecat.income{background:rgba(63,185,80,.15);color:#3fb950}
+.ecat.expense{background:rgba(248,81,73,.15);color:#f85149}
+.ememo{font-size:11px;color:#7d8590}
+.eamt{font-size:16px;font-weight:700}
+.eamt.income{color:#3fb950}.eamt.expense{color:#f85149}
+.esats{font-size:11px;color:#f7931a;font-weight:600}
+.ibtn{background:none;border:none;color:#7d8590;cursor:pointer;font-size:14px;padding:4px}
+.empty{color:#484f58;font-size:13px;text-align:center;padding:20px 0}
+
+.fab{position:fixed;bottom:28px;right:calc(50% - 210px);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f7931a,#e2820a);border:none;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(247,147,26,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+@media(max-width:480px){.fab{right:24px}}
+
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.ov.ctr{align-items:center}
+.modal{background:#161b22;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;border:1px solid #30363d;border-bottom:none}
+.modal.ctr{border-radius:16px;border-bottom:1px solid #30363d;max-width:360px;width:90%}
+.mtit{font-size:17px;font-weight:700;margin-bottom:14px;color:#f0f6fc}
+
+.ttog{display:flex;margin-bottom:12px;background:#21262d;border-radius:10px;overflow:hidden}
+.ttog button{flex:1;padding:10px 0;border:none;cursor:pointer;font-size:14px;font-weight:600;background:transparent;color:#7d8590}
+.ttog button.ae{background:rgba(248,81,73,.2);color:#f85149}
+.ttog button.ai{background:rgba(63,185,80,.2);color:#3fb950}
+
+.fi{width:100%;padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:10px;color:#e6edf3;font-size:14px;margin-bottom:10px}
+.famt{font-size:16px;font-weight:600;padding-right:110px}
+.fprev{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:#f7931a;font-weight:600;pointer-events:none}
+.cwrp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.cbtn{padding:6px 12px;border-radius:8px;border:1px solid #30363d;font-size:12px;cursor:pointer;background:#21262d;color:#7d8590}
+.cbtn.ai{background:rgba(63,185,80,.2);color:#3fb950}
+.cbtn.ae{background:rgba(248,81,73,.2);color:#f85149}
+.sbtn{width:100%;padding:13px 0;border-radius:12px;border:none;background:linear-gradient(135deg,#f7931a,#e2820a);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+
+.stit{font-size:14px;font-weight:700;color:#c9d1d9;margin-bottom:10px}
+.chbox{background:#161b22;border-radius:12px;border:1px solid #21262d;padding:14px;margin-bottom:16px}
+
+/* 자산비교 카드 */
+.accard{background:#161b22;border:1px solid #21262d;border-radius:14px;padding:16px;margin-bottom:12px}
+.achead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.actit{font-size:14px;font-weight:700}
+.acrow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1c2128}
+.acrow:last-child{border:none}
+.aclbl{font-size:12px;color:#7d8590}
+.acval{font-size:14px;font-weight:700;text-align:right}
+.acsats{font-size:10px;color:#f7931a;text-align:right}
+.delta{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px}
+.delta.up{background:rgba(63,185,80,.15);color:#3fb950}
+.delta.dn{background:rgba(248,81,73,.15);color:#f85149}
+.delta.flat{background:rgba(125,133,144,.15);color:#7d8590}
+
+/* 월별 바 차트 */
+.mbar-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px}
+.mbar-lbl{width:32px;color:#7d8590;text-align:right;flex-shrink:0}
+.mbar-bg{flex:1;height:18px;background:#21262d;border-radius:6px;overflow:hidden;position:relative;display:flex}
+.mbar-i{height:100%;background:rgba(63,185,80,.6);transition:width .3s}
+.mbar-e{height:100%;background:rgba(248,81,73,.6);transition:width .3s}
+.mbar-val{font-size:10px;min-width:55px;text-align:right;font-weight:600}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid #30363d;border-radius:10px;padding:10px 20px;font-size:13px;color:#e6edf3;z-index:300;box-shadow:0 4px 12px rgba(0,0,0,.5);transition:opacity .3s;display:flex;align-items:center;gap:8px}
+.pb{padding-bottom:100px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-c"></div>
+
+<!-- 폼 모달 (DOM에 고정 — 리렌더링 안 됨) -->
+<div id="form-overlay" class="ov" style="display:none" onclick="closeF()">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="mtit" id="form-title">새 기록</div>
+  <div class="ttog">
+    <button id="tb-exp" onclick="setFT('expense')">지출</button>
+    <button id="tb-inc" onclick="setFT('income')">수입</button>
+  </div>
+  <input type="date" class="fi" id="f-date">
+  <div style="position:relative;margin-bottom:10px">
+    <input type="number" class="fi famt" id="f-amount" placeholder="금액 (원)" inputmode="numeric" style="margin-bottom:0">
+    <div class="fprev" id="f-sats-preview"></div>
+  </div>
+  <div class="cwrp" id="f-cats"></div>
+  <input type="text" class="fi" id="f-memo" placeholder="메모 (선택)" style="margin-bottom:16px">
+  <button class="sbtn" id="f-submit" onclick="subF()">추가하기</button>
+</div>
+</div>
+
+<!-- 시세 설정 모달 -->
+<div id="price-overlay" class="ov ctr" style="display:none" onclick="closePS()">
+<div class="modal ctr" onclick="event.stopPropagation()">
+  <div class="mtit">⚙️ BTC 시세 설정</div>
+  <div style="font-size:12px;color:#7d8590;margin-bottom:12px" id="ps-status"></div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+    <span style="color:#f7931a;font-weight:700;white-space:nowrap">1 BTC =</span>
+    <input type="number" class="fi" style="margin:0;flex:1" id="ps-input" inputmode="numeric">
+    <span style="color:#7d8590;font-size:13px">원</span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="retryF();closePS()" style="flex:1;padding:12px 0;border-radius:10px;border:1px solid #30363d;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer">🔄 자동</button>
+    <button onclick="saveMP()" class="sbtn" style="flex:1">💾 저장</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══ CONSTANTS ═══
+const CI=["급여","부수입","투자수익","용돈","기타수입"];
+const CE=["식비","교통","주거","통신","의료","쇼핑","문화","교육","저축/투자","기타지출"];
+const DN=["일","월","화","수","목","금","토"];
+
+// ═══ STATE ═══
+let S={
+  entries:[],btcPrices:{},curBtc:0,pStatus:'loading',
+  curMonth:(()=>{const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`})(),
+  selDate:null,view:'calendar',
+  form:{type:'expense',date:'',amount:'',cat:'',memo:'',editId:null}
+};
+
+// ═══ IndexedDB ═══
+const DB='btc_budget';
+function odb(){return new Promise((r,j)=>{const q=indexedDB.open(DB,1);q.onupgradeneeded=e=>e.target.result.createObjectStore('kv');q.onsuccess=e=>r(e.target.result);q.onerror=e=>j(e)})}
+async function dg(k,f){try{const d=await odb();return new Promise(r=>{const t=d.transaction('kv','readonly').objectStore('kv').get(k);t.onsuccess=()=>r(t.result!==undefined?t.result:f);t.onerror=()=>r(f)})}catch{return f}}
+async function ds(k,v){try{const d=await odb();d.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){console.error(e)}}
+
+// ═══ HELPERS ═══
+function fk(n){return new Intl.NumberFormat('ko-KR').format(Math.abs(n))}
+function fs(s){if(!s||s===0)return'0 sats';const a=Math.abs(s);if(a>=1e8)return(a/1e8).toFixed(4)+' BTC';return new Intl.NumberFormat('ko-KR').format(Math.round(a))+' sats'}
+function ts(k,b){return(!b||b<=0)?0:(k/b)*1e8}
+function gbd(d){return S.btcPrices[d]||S.curBtc||140000000}
+function sa(n){if(n>=1e6)return(n/1e4).toFixed(0)+'만';if(n>=1e4)return Math.round(n/1e4)+'만';return fk(n)}
+function toast(m,d=3000){const c=document.getElementById('toast-c'),el=document.createElement('div');el.className='toast';el.innerHTML=m;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300)},d)}
+
+// ═══ MONTH HELPERS ═══
+function getMonthData(ym){
+  const me=S.entries.filter(e=>e.date.startsWith(ym));
+  const inc=me.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const exp=me.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  return{income:inc,expense:exp,balance:inc-exp};
+}
+function prevYM(ym){const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-2,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function nextYM(ym){const[y,m]=ym.split('-').map(Number);const d=new Date(y,m,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+
+// ═══ BTC FETCH ═══
+async function fetchBtc(ym){
+  S.pStatus='loading';R();
+  let gotC=false,gotH=false;
+  // CoinGecko
+  try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=krw',{signal:AbortSignal.timeout(8000)});if(r.ok){const d=await r.json();if(d?.bitcoin?.krw){S.curBtc=d.bitcoin.krw;gotC=true}}}catch(e){}
+  // Blockchain.info
+  if(!gotC){try{const r=await fetch('https://blockchain.info/ticker',{signal:AbortSignal.timeout(8000)});if(r.ok){const d=await r.json();if(d?.KRW?.last){S.curBtc=d.KRW.last;gotC=true}}}catch(e){}}
+  // CoinCap
+  if(!gotC){try{const r=await fetch('https://api.coincap.io/v2/assets/bitcoin',{signal:AbortSignal.timeout(8000)});if(r.ok){const d=await r.json();if(d?.data?.priceUsd){S.curBtc=Math.round(parseFloat(d.data.priceUsd)*1350);gotC=true}}}catch(e){}}
+  // History
+  try{
+    const[y,m]=ym.split('-').map(Number);
+    const from=Math.floor(new Date(y,m-1,1).getTime()/1000);
+    const to=Math.floor(Math.min(new Date(y,m,0,23,59,59).getTime(),Date.now())/1000);
+    const r=await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=krw&from=${from}&to=${to}`,{signal:AbortSignal.timeout(10000)});
+    if(r.ok){const d=await r.json();if(d?.prices){d.prices.forEach(([t,p])=>{const dt=new Date(t);S.btcPrices[`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`]=p});gotH=true}}
+  }catch(e){}
+  if(gotC){const tk=new Date().toISOString().slice(0,10);S.btcPrices[tk]=S.curBtc;ds('btcPrices',S.btcPrices)}
+  if(gotC){S.pStatus='live'}else{
+    const sv=await dg('manualBtcPrice',0);
+    if(sv>0)S.curBtc=sv;else S.curBtc=140000000;
+    S.pStatus='manual';
+    if(!gotC)toast('⚠️ 시세를 불러올 수 없습니다<br>상단 가격을 탭해서 수동 입력하세요',5000);
+  }
+  R();
+}
+function retryF(){fetchBtc(S.curMonth)}
+
+// ═══ ACTIONS ═══
+function setMo(dir){const[y,m]=S.curMonth.split('-').map(Number);const nd=dir==='p'?new Date(y,m-2,1):new Date(y,m,1);S.curMonth=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}`;S.selDate=null;R();fetchBtc(S.curMonth)}
+function selD(d){S.selDate=S.selDate===d?null:d;R()}
+function setV(v){S.view=v;R()}
+
+// ═══ FORM (분리된 DOM — 포커스 유지) ═══
+function openF(d){
+  const dd=d||S.selDate||new Date().getDate();
+  S.form={type:'expense',date:`${S.curMonth}-${String(dd).padStart(2,'0')}`,amount:'',cat:'',memo:'',editId:null};
+  showFormUI();
+}
+function editE(e){
+  S.form={type:e.type,date:e.date,amount:String(e.amount),cat:e.category,memo:e.memo,editId:e.id};
+  showFormUI();
+}
+function showFormUI(){
+  const f=S.form;
+  document.getElementById('form-title').textContent=f.editId?'수정하기':'새 기록';
+  document.getElementById('f-date').value=f.date;
+  document.getElementById('f-amount').value=f.amount;
+  document.getElementById('f-memo').value=f.memo;
+  document.getElementById('f-submit').textContent=f.editId?'수정 완료':'추가하기';
+  updateFormType();
+  updateFormCats();
+  updateSatsPreview();
+  document.getElementById('form-overlay').style.display='flex';
+  // 금액 필드에 포커스
+  setTimeout(()=>document.getElementById('f-amount').focus(),100);
+}
+function closeF(){document.getElementById('form-overlay').style.display='none';S.form.editId=null}
+
+function setFT(t){S.form.type=t;S.form.cat='';updateFormType();updateFormCats();updateSatsPreview()}
+function updateFormType(){
+  const t=S.form.type;
+  document.getElementById('tb-exp').className=t==='expense'?'ae':'';
+  document.getElementById('tb-inc').className=t==='income'?'ai':'';
+}
+function updateFormCats(){
+  const cats=S.form.type==='income'?CI:CE;
+  const ac=S.form.cat||cats[0];
+  const cls=S.form.type==='income'?'ai':'ae';
+  document.getElementById('f-cats').innerHTML=cats.map(c=>
+    `<button class="cbtn ${ac===c?cls:''}" onclick="pickCat('${c}')">${c}</button>`
+  ).join('');
+}
+function pickCat(c){S.form.cat=c;updateFormCats()}
+function updateSatsPreview(){
+  const v=document.getElementById('f-amount').value;
+  const el=document.getElementById('f-sats-preview');
+  if(v&&Number(v)>0){
+    const d=document.getElementById('f-date').value;
+    el.textContent='₿ '+fs(ts(Number(v),gbd(d)));
+  }else el.textContent='';
+}
+
+// 금액 입력 이벤트 — R() 호출 안 함!
+document.getElementById('f-amount').addEventListener('input',updateSatsPreview);
+document.getElementById('f-date').addEventListener('change',function(){S.form.date=this.value;updateSatsPreview()});
+
+function subF(){
+  const f=S.form;
+  const amt=document.getElementById('f-amount').value;
+  const date=document.getElementById('f-date').value;
+  const memo=document.getElementById('f-memo').value;
+  if(!amt||Number(amt)<=0)return;
+  const cats=f.type==='income'?CI:CE;
+  const en={id:f.editId||Date.now(),type:f.type,date:date,amount:Number(amt),category:f.cat||cats[0],memo:memo};
+  if(f.editId)S.entries=S.entries.map(e=>e.id===f.editId?en:e);else S.entries.push(en);
+  ds('entries',S.entries);
+  closeF();R();
+}
+function delE(id){S.entries=S.entries.filter(e=>e.id!==id);ds('entries',S.entries);R()}
+
+// ═══ 시세 설정 모달 ═══
+function openPS(){
+  document.getElementById('ps-input').value=S.curBtc;
+  const lbl=S.pStatus==='live'?'실시간':S.pStatus==='manual'?'수동설정':'오류';
+  const clr=S.pStatus==='live'?'#3fb950':S.pStatus==='manual'?'#f7931a':'#f85149';
+  document.getElementById('ps-status').innerHTML=`현재: <span style="color:${clr}">${lbl}</span> · API 실패 시 수동 입력 가능`;
+  document.getElementById('price-overlay').style.display='flex';
+}
+function closePS(){document.getElementById('price-overlay').style.display='none'}
+function saveMP(){
+  const v=Number(document.getElementById('ps-input').value);
+  if(v>0){S.curBtc=v;S.pStatus='manual';const tk=new Date().toISOString().slice(0,10);S.btcPrices[tk]=v;ds('btcPrices',S.btcPrices);ds('manualBtcPrice',v);toast('✅ 시세가 저장되었습니다');closePS();R()}
+  else toast('⚠️ 올바른 금액을 입력하세요');
+}
+
+// ═══ RENDER (폼 제외) ═══
+function R(){
+  const cm=S.curMonth,[cy,cmo]=cm.split('-').map(Number);
+  const fd=new Date(cy,cmo-1,1).getDay(),dim=new Date(cy,cmo,0).getDate();
+  const cds=[];for(let i=0;i<fd;i++)cds.push(null);for(let d=1;d<=dim;d++)cds.push(d);while(cds.length%7)cds.push(null);
+
+  const daily={};S.entries.forEach(e=>{if(!e.date.startsWith(cm))return;const d=parseInt(e.date.split('-')[2]);if(!daily[d])daily[d]={i:0,e:0};if(e.type==='income')daily[d].i+=e.amount;else daily[d].e+=e.amount});
+
+  const me=S.entries.filter(e=>e.date.startsWith(cm));
+  const tI=me.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const tE=me.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const bal=tI-tE;
+  const now=new Date(),isT=d=>d&&cy===now.getFullYear()&&cmo===now.getMonth()+1&&d===now.getDate();
+
+  const sk=S.selDate?`${cm}-${String(S.selDate).padStart(2,'0')}`:null;
+  const se=sk?S.entries.filter(e=>e.date===sk).sort((a,b)=>b.id-a.id):[];
+
+  const sDot=S.pStatus==='live'?'live':S.pStatus==='manual'?'manual':'err';
+  const sLbl=S.pStatus==='live'?'실시간':S.pStatus==='manual'?'수동':'...';
+
+  let h='';
+
+  // Header
+  h+=`<div class="hdr"><span class="htit">₿ 가계부</span>
+  <div style="text-align:right"><div class="hprice" onclick="openPS()"><span class="sdot ${sDot}"></span>1 BTC = ${S.curBtc>0?fk(S.curBtc)+'원':'설정필요'}</div>
+  <div style="font-size:10px;color:#484f58">${sLbl} · 탭하여 수정</div></div></div>`;
+
+  // Month Nav
+  h+=`<div class="mnav"><button onclick="setMo('p')">‹</button><div style="text-align:center">
+  <div style="font-size:18px;font-weight:700;color:#f0f6fc">${cy}년 ${cmo}월</div>
+  <div class="mbal" style="color:${bal>=0?'#e6edf3':'#f85149'}">${bal<0?'-':''}${fk(bal)}원</div>
+  </div><button onclick="setMo('n')">›</button></div>`;
+
+  h+=`<div class="msum"><span style="color:#3fb950">수입 +${fk(tI)}</span><span style="color:#484f58">|</span><span style="color:#f85149">지출 -${fk(tE)}</span><span style="color:#484f58">|</span><span style="color:#f7931a">₿${fs(ts(Math.abs(bal),S.curBtc))}</span></div>`;
+
+  // Tabs
+  h+=`<div class="tabs">
+    <button class="${S.view==='calendar'?'act':''}" onclick="setV('calendar')">📅 달력</button>
+    <button class="${S.view==='analysis'?'act':''}" onclick="setV('analysis')">📊 분석</button>
+    <button class="${S.view==='compare'?'act':''}" onclick="setV('compare')">📈 자산비교</button>
+  </div>`;
+
+  // ── CALENDAR VIEW ──
+  if(S.view==='calendar'){
+    h+='<div class="cwrap"><div class="cgrid">';
+    DN.forEach((d,i)=>{h+=`<div class="chdr ${i===0?'sun':i===6?'sat':''}">${d}</div>`});
+    h+='</div><div class="cgrid">';
+    cds.forEach((d,idx)=>{
+      const di=idx%7;
+      if(!d){h+='<div class="ccell empty"></div>';return}
+      const dd=daily[d],sl=d===S.selDate,td=isT(d);
+      h+=`<div class="ccell ${sl?'sel':''} ${td&&!sl?'td':''}" onclick="selD(${d})">`;
+      h+=`<div class="cday ${td?'today':''} ${di===0?'sun':di===6?'sat':''}">${d}</div>`;
+      if(dd&&dd.i>0)h+=`<div class="cinc">+${sa(dd.i)}</div>`;
+      if(dd&&dd.e>0)h+=`<div class="cexp">-${sa(dd.e)}</div>`;
+      h+='</div>';
+    });
+    h+='</div></div>';
+
+    if(S.selDate){
+      const dk=`${cm}-${String(S.selDate).padStart(2,'0')}`,dp=S.btcPrices[dk],dow=DN[new Date(cy,cmo-1,S.selDate).getDay()];
+      h+=`<div class="dwrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div class="ddate">${cmo}월 ${S.selDate}일 ${dow}요일</div>${dp?`<div style="font-size:10px;color:#f7931a;margin-top:2px">BTC ${fk(dp)}원</div>`:''}</div><button class="addbtn" onclick="openF(${S.selDate})">+ 추가</button></div>`;
+      if(!se.length)h+='<div class="empty">기록 없음</div>';
+      else se.forEach(e=>{h+=entryHTML(e,gbd(e.date))});
+      h+='</div>';
+    }else h+='<div class="empty">날짜를 탭하면 상세 내역을 볼 수 있어요</div>';
+
+  // ── ANALYSIS VIEW ──
+  }else if(S.view==='analysis'){
+    h+='<div style="padding:8px 16px">';
+    const catM={};me.filter(e=>e.type==='expense').forEach(e=>{catM[e.category]=(catM[e.category]||0)+e.amount});
+    const catS=Object.entries(catM).sort((a,b)=>b[1]-a[1]);
+    if(catS.length>0){
+      h+='<div style="margin-bottom:16px"><div class="stit">카테고리별 지출</div>';
+      catS.forEach(([c,a])=>{const p=tE>0?(a/tE*100):0;h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:70px;font-size:12px;color:#e6edf3">${c}</div><div style="flex:1;height:20px;background:#21262d;border-radius:8px;overflow:hidden;position:relative"><div style="width:${p}%;height:100%;background:linear-gradient(90deg,#f85149,#da3633);border-radius:8px"></div><span style="position:absolute;right:6px;top:2px;font-size:10px;color:#7d8590">${p.toFixed(1)}%</span></div><div style="font-size:11px;color:#e6edf3;min-width:65px;text-align:right;font-weight:600">${fk(a)}원</div><div style="font-size:10px;color:#f7931a;min-width:55px;text-align:right">₿${fs(ts(a,S.curBtc))}</div></div>`});
+      h+='</div>';
+    }else h+='<div class="empty" style="padding:30px 0">이 달의 지출 기록이 없습니다</div>';
+
+    // BTC chart
+    h+='<div style="margin-bottom:16px"><div class="stit">일별 BTC 시세</div><div class="chbox">';
+    const dps=[];for(let d=1;d<=dim;d++){const k=`${cm}-${String(d).padStart(2,'0')}`;if(S.btcPrices[k])dps.push({d,p:S.btcPrices[k]})}
+    if(!dps.length)h+='<div style="color:#484f58;font-size:12px;text-align:center">시세 데이터 없음</div>';
+    else{
+      const mx=Math.max(...dps.map(x=>x.p)),mn=Math.min(...dps.map(x=>x.p)),rng=mx-mn||1;
+      const w=340,ht=80,px=5,py=5;
+      const pts=dps.map((x,i)=>`${px+(i/(dps.length-1||1))*(w-2*px)},${py+(1-(x.p-mn)/rng)*(ht-2*py)}`).join(' ');
+      const lx=px+((dps.length-1)/(dps.length-1||1))*(w-2*px),ly=py+(1-(dps[dps.length-1].p-mn)/rng)*(ht-2*py);
+      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;color:#7d8590;margin-bottom:4px"><span>최저 ${(mn/1e4).toFixed(0)}만원</span><span>최고 ${(mx/1e4).toFixed(0)}만원</span></div>`;
+      h+=`<svg viewBox="0 0 ${w} ${ht}" style="width:100%;height:80px"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f7931a" stop-opacity=".3"/><stop offset="100%" stop-color="#f7931a" stop-opacity=".02"/></linearGradient></defs><polygon points="${pts} ${lx},${ht} ${px},${ht}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="#f7931a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="3" fill="#f7931a"/></svg>`;
+      h+=`<div style="display:flex;justify-content:space-between;font-size:9px;color:#484f58;margin-top:2px"><span>${dps[0].d}일</span><span>${dps[dps.length-1].d}일</span></div>`;
+    }
+    h+='</div></div>';
+
+    // Full list
+    h+='<div><div class="stit">전체 내역</div>';
+    if(!me.length)h+='<div class="empty">기록 없음</div>';
+    me.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id).forEach(e=>{
+      const bp=gbd(e.date),dd=parseInt(e.date.split('-')[2]);
+      h+=`<div class="ecard" style="margin-bottom:5px"><div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:11px;color:#7d8590">${dd}일</span><span class="ecat ${e.type}">${e.category}</span>${e.memo?`<span class="ememo">${e.memo}</span>`:''}</div><div style="display:flex;align-items:baseline;gap:8px"><span class="eamt ${e.type}" style="font-size:15px">${e.type==='income'?'+':'-'}${fk(e.amount)}원</span><span class="esats">₿ ${fs(ts(e.amount,bp))}</span></div></div><div style="display:flex;gap:2px"><button class="ibtn" onclick='editE(${JSON.stringify(e)})'>✏️</button><button class="ibtn" onclick="delE(${e.id})">🗑</button></div></div>`;
+    });
+    h+='</div></div>';
+
+  // ── COMPARE VIEW (자산비교) ──
+  }else if(S.view==='compare'){
+    h+='<div style="padding:8px 16px">';
+
+    // ① 전월 대비
+    const prevM=prevYM(cm);
+    const curD=getMonthData(cm), prvD=getMonthData(prevM);
+    const [,pm]=prevM.split('-').map(Number);
+    const balDiff=curD.balance-prvD.balance;
+    const incDiff=curD.income-prvD.income;
+    const expDiff=curD.expense-prvD.expense;
+
+    h+=`<div class="accard">
+      <div class="achead"><div class="actit" style="color:#58a6ff">📊 전월 대비 (${pm}월 → ${cmo}월)</div></div>`;
+
+    h+=compRow('수입',curD.income,prvD.income,incDiff,'#3fb950');
+    h+=compRow('지출',curD.expense,prvD.expense,expDiff,'#f85149',true);
+    h+=compRow('잔액',curD.balance,prvD.balance,balDiff,'#58a6ff');
+    h+='</div>';
+
+    // ② 연초 대비 (1월~이번달 누적)
+    const year=cy;
+    let ytdInc=0,ytdExp=0;
+    let janInc=0,janExp=0;
+    for(let m=1;m<=cmo;m++){
+      const ym=`${year}-${String(m).padStart(2,'0')}`;
+      const d=getMonthData(ym);
+      ytdInc+=d.income;ytdExp+=d.expense;
+      if(m===1){janInc=d.income;janExp=d.expense}
+    }
+    const ytdBal=ytdInc-ytdExp;
+    const janBal=janInc-janExp;
+
+    h+=`<div class="accard">
+      <div class="achead"><div class="actit" style="color:#f7931a">📈 ${year}년 연간 누적 (1월~${cmo}월)</div></div>
+      <div class="acrow"><div class="aclbl">총 수입</div><div><div class="acval" style="color:#3fb950">+${fk(ytdInc)}원</div><div class="acsats">₿ ${fs(ts(ytdInc,S.curBtc))}</div></div></div>
+      <div class="acrow"><div class="aclbl">총 지출</div><div><div class="acval" style="color:#f85149">-${fk(ytdExp)}원</div><div class="acsats">₿ ${fs(ts(ytdExp,S.curBtc))}</div></div></div>
+      <div class="acrow"><div class="aclbl">순이익</div><div><div class="acval" style="color:${ytdBal>=0?'#58a6ff':'#f85149'}">${ytdBal<0?'-':''}${fk(ytdBal)}원</div><div class="acsats">₿ ${fs(ts(Math.abs(ytdBal),S.curBtc))}</div></div></div>
+    </div>`;
+
+    // 연초(1월) 대비 이번달
+    h+=`<div class="accard">
+      <div class="achead"><div class="actit" style="color:#3fb950">🆚 1월 대비 ${cmo}월</div></div>`;
+    h+=compRow('수입',curD.income,janInc,curD.income-janInc,'#3fb950');
+    h+=compRow('지출',curD.expense,janExp,curD.expense-janExp,'#f85149',true);
+    h+=compRow('잔액',curD.balance,janBal,curD.balance-janBal,'#58a6ff');
+    h+='</div>';
+
+    // ③ 월별 추이 바 차트 (최근 6개월)
+    h+='<div class="accard"><div class="achead"><div class="actit" style="color:#c9d1d9">📊 월별 추이 (최근 6개월)</div></div>';
+    const months6=[];let ym6=cm;
+    for(let i=0;i<6;i++){months6.unshift(ym6);ym6=prevYM(ym6)}
+    let maxVal=1;
+    const m6data=months6.map(ym=>{const d=getMonthData(ym);const mx=Math.max(d.income,d.expense);if(mx>maxVal)maxVal=mx;return{ym,...d}});
+
+    m6data.forEach(d=>{
+      const[,mo]=d.ym.split('-').map(Number);
+      const iw=(d.income/maxVal*100);
+      const ew=(d.expense/maxVal*100);
+      h+=`<div class="mbar-row">
+        <div class="mbar-lbl">${mo}월</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+          <div class="mbar-bg"><div class="mbar-i" style="width:${iw}%"></div></div>
+          <div class="mbar-bg"><div class="mbar-e" style="width:${ew}%"></div></div>
+        </div>
+        <div style="min-width:70px;text-align:right">
+          <div style="font-size:10px;color:#3fb950">+${sa(d.income)}</div>
+          <div style="font-size:10px;color:#f85149">-${sa(d.expense)}</div>
+        </div>
+      </div>`;
+    });
+    h+=`<div style="display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:10px"><span style="color:#3fb950">■ 수입</span><span style="color:#f85149">■ 지출</span></div>`;
+    h+='</div>';
+
+    // ④ 월별 순이익 추이
+    h+='<div class="accard"><div class="achead"><div class="actit" style="color:#c9d1d9">💰 월별 순이익 추이</div></div>';
+    const maxBal=Math.max(1,...m6data.map(d=>Math.abs(d.balance)));
+    m6data.forEach(d=>{
+      const[,mo]=d.ym.split('-').map(Number);
+      const w=(Math.abs(d.balance)/maxBal*100);
+      const clr=d.balance>=0?'#3fb950':'#f85149';
+      h+=`<div class="mbar-row">
+        <div class="mbar-lbl">${mo}월</div>
+        <div class="mbar-bg"><div style="width:${w}%;height:100%;background:${clr};opacity:.6;border-radius:6px;transition:width .3s"></div></div>
+        <div class="mbar-val" style="color:${clr}">${d.balance<0?'-':'+'} ${sa(Math.abs(d.balance))}</div>
+      </div>`;
+    });
+    h+='</div>';
+
+    h+='</div>';
+  }
+
+  h+='<div class="pb"></div>';
+  h+=`<button class="fab" onclick="openF()">+</button>`;
+
+  document.getElementById('app').innerHTML=h;
+}
+
+// 비교 행 헬퍼
+function compRow(label,cur,prev,diff,clr,invertDelta=false){
+  // invertDelta: 지출의 경우 증가가 나쁜 것
+  let dc='flat',arrow='→',sign='';
+  if(diff>0){dc=invertDelta?'dn':'up';arrow='▲';sign='+'}
+  else if(diff<0){dc=invertDelta?'up':'dn';arrow='▼';sign=''}
+  return`<div class="acrow"><div class="aclbl">${label}</div><div style="display:flex;align-items:center;gap:10px">
+    <div><div class="acval" style="color:${clr}">${cur<0?'-':''}${fk(cur)}원</div><div class="acsats">₿ ${fs(ts(Math.abs(cur),S.curBtc))}</div></div>
+    <div class="delta ${dc}">${arrow} ${sign}${fk(diff)}</div>
+  </div></div>`;
+}
+
+function entryHTML(e,bp){
+  return`<div class="ecard"><div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="ecat ${e.type}">${e.category}</span>${e.memo?`<span class="ememo">${e.memo}</span>`:''}</div><div style="display:flex;align-items:baseline;gap:8px"><span class="eamt ${e.type}">${e.type==='income'?'+':'-'}${fk(e.amount)}원</span><span class="esats">₿ ${fs(ts(e.amount,bp))}</span></div></div><div style="display:flex;gap:2px"><button class="ibtn" onclick='editE(${JSON.stringify(e)})'>✏️</button><button class="ibtn" onclick="delE(${e.id})">🗑</button></div></div>`;
+}
+
+// ═══ INIT ═══
+(async function(){
+  S.entries=await dg('entries',[]);
+  S.btcPrices=await dg('btcPrices',{});
+  const mp=await dg('manualBtcPrice',0);
+  if(mp>0)S.curBtc=mp;
+  R();
+  fetchBtc(S.curMonth);
+})();
+
+if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
